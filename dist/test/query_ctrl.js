@@ -27,8 +27,11 @@ var GenericDatasourceQueryCtrl = exports.GenericDatasourceQueryCtrl = function (
 
     _this.scope = $scope;
     _this.uiSegmentSrv = uiSegmentSrv;
-    _this.target.target = _this.target.target || 'select metric';
-    _this.target.type = _this.target.type || 'timeserie';
+    console.log(_this.target);
+    _this.target.target = _this.target.target || 'LBMA/GOLD';
+    _this.target.db = _this.target.target.split('/')[0] || 'LBMA';
+    _this.target.code = _this.target.target.split('/')[1] || 'GOLD';
+    _this.onChangeInternal();
     return _this;
   }
 
@@ -39,6 +42,11 @@ var GenericDatasourceQueryCtrl = exports.GenericDatasourceQueryCtrl = function (
       // Options have to be transformed by uiSegmentSrv to be usable by metric-segment-model directive
     }
   }, {
+    key: 'getCodeOptions',
+    value: function getCodeOptions() {
+      return Promise.all([]);
+    }
+  }, {
     key: 'toggleEditorMode',
     value: function toggleEditorMode() {
       this.target.rawQuery = !this.target.rawQuery;
@@ -46,6 +54,7 @@ var GenericDatasourceQueryCtrl = exports.GenericDatasourceQueryCtrl = function (
   }, {
     key: 'onChangeInternal',
     value: function onChangeInternal() {
+      this.target.target = this.target.db + '/' + this.target.code;
       this.panelCtrl.refresh(); // Asks the panel to refresh data.
     }
   }]);

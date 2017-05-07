@@ -3,68 +3,77 @@ import _ from "lodash";
 export class GenericDatasource {
 
   constructor(instanceSettings, $q, backendSrv, templateSrv) {
+    console.log(instanceSettings);
     this.type = instanceSettings.type;
-    this.url = instanceSettings.url;
     this.name = instanceSettings.name;
+    this.quandl_api_key = instanceSettings.jsonData.quandl_api_key;
     this.q = $q;
     this.backendSrv = backendSrv;
     this.templateSrv = templateSrv;
   }
 
   query(options) {
-    var query = this.buildQueryParameters(options);
-    query.targets = query.targets.filter(t => !t.hide);
-
-    if (query.targets.length <= 0) {
-      return this.q.when({data: []});
-    }
-
     var start = options.range.from;
     var end = options.range.to;
 
-    var resp = [];
-    for(var target in query.targets){
-        var tick = target.target;
-        resp[tick] = resp;
+    options.targets = options.targets.filter(t => !t.hide);
 
-        var url = 'https://www.quandl.com/api/v3/datasets/' + tick;
+    var proms = _.map(options.targets, target => {
+        var tick = target.db + '/' + target.code;
 
-        var quandl_resp = this.backendSrv.datasourceRequest({
+        var url = 'https://www.quandl.com/api/v3/datasets/' + tick + '.json?';
+
+        url = url + 'start_date=' + start.format('YYYY-MM-DD');
+        url = url + '&end_date=' + end.format('YYYY-MM-DD');
+        url = url + '&api_key=' + this.quandl_api_key;
+
+
+        return this.backendSrv.datasourceRequest({
           url: url,
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
-        });
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept'
+          }
+        }).then(resp => {
+            if (resp.status === 200) {
+                var ts = resp.data.dataset.data;
+                var datapoints = _.map(ts, tup => {
+                    return [parseFloat(tup[1]), new Date(tup[0]).getTime()]
+                }).reverse();
 
-        var ts = quandl_resp.dataset.data;
-        var datapoints = _.map(ts, tup => {
-            return [parseFloat(tup[1]), tup[0].getTime()]
-        });
+                var obj = {
+                    target: tick,
+                    datapoints: datapoints
+                }
 
-        var resp_obj = {};
-        resp_obj.target = target;
-        resp_obj.datapoints = datapoints;
-        resp.push(resp_obj);
+                return obj;
+            }
+            return null;
+        });
+    });
+    return Promise.all(proms)
+        .then(data => {
+            console.log(data);
+            return {data: data}
+        })
+        .catch(err => console.log('Catch', err));
     }
+  
+
+  testDatasource() {
+    var url = 'https://www.quandl.com/api/v3/databases/codes.json?'
+    url = url + 'api_key=' + this.quandl_api_key;
 
     return this.backendSrv.datasourceRequest({
       url: url,
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      method: 'GET'
     }).then(response => {
-
+      if (response.status === 200) {
+        return { status: "success", message: "Data source is working", title: "Success" };
+      }
     });
-  }
-
-  testDatasource() {
-    return { status: "success", message: "Data source is working", title: "Success" };
-    // return this.backendSrv.datasourceRequest({
-    //   url: this.url + '/',
-    //   method: 'GET'
-    // }).then(response => {
-    //   if (response.status === 200) {
-    //     return { status: "success", message: "Data source is working", title: "Success" };
-    //   }
-    // });
   }
 
   annotationQuery(options) {
@@ -74,6 +83,33 @@ export class GenericDatasource {
   }
 
   metricFindQuery(options) {
-    return [];
+
+    var url = 'https://www.quandl.com/api/v3/databases/codes.json?'
+    url = url + 'api_key=' + this.quandl_api_key;
+
+    return this.backendSrv.datasourceRequest({
+      url: url,
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    }).then(resp => {
+        var codes = _.map(resp.data.databases, ds => {
+            return {text: ds.name,value: ds.database_code};
+        });
+        var ret = this.mapToTextValue(codes);
+        return ret;
+    });
   }
+
+  mapToTextValue(result) {
+    return _.map(result, (d, i) => {
+      if (d && d.text && d.value) {
+        return { text: d.text, value: d.value };
+      } else if (_.isObject(d)) {
+        return { text: d, value: i};
+      }
+      return { text: d, value: d };
+    });
+  }
+
+
 }

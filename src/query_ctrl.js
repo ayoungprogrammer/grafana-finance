@@ -8,8 +8,11 @@ export class GenericDatasourceQueryCtrl extends QueryCtrl {
 
     this.scope = $scope;
     this.uiSegmentSrv = uiSegmentSrv;
-    this.target.target = this.target.target || 'select metric';
-    this.target.type = this.target.type || 'timeserie';
+    console.log(this.target);
+    this.target.target = this.target.target || 'LBMA/GOLD';
+    this.target.db = this.target.target.split('/')[0] || 'LBMA';
+    this.target.code = this.target.target.split('/')[1] || 'GOLD';
+    this.onChangeInternal();
   }
 
   getOptions() {
@@ -18,11 +21,16 @@ export class GenericDatasourceQueryCtrl extends QueryCtrl {
       // Options have to be transformed by uiSegmentSrv to be usable by metric-segment-model directive
   }
 
+  getCodeOptions() {
+    return Promise.all([])
+  }
+
   toggleEditorMode() {
     this.target.rawQuery = !this.target.rawQuery;
   }
 
   onChangeInternal() {
+    this.target.target = this.target.db + '/' + this.target.code;
     this.panelCtrl.refresh(); // Asks the panel to refresh data.
   }
 }
