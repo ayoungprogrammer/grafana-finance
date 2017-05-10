@@ -29,9 +29,52 @@ var GenericDatasource = exports.GenericDatasource = function () {
   }
 
   _createClass(GenericDatasource, [{
+    key: 'delay',
+    value: function delay(t) {
+      return new Promise(function (resolve) {
+        setTimeout(resolve, t);
+      });
+    }
+  }, {
+    key: 'getTimeSeries',
+    value: function getTimeSeries(options, retryInterval) {
+      var _this = this;
+
+      return this.backendSrv.datasourceRequest({
+        url: options.url,
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+          'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept'
+        }
+      }).then(function (resp) {
+        if (resp.status === 200) {
+          var ts = resp.data.dataset.data;
+          var datapoints = _lodash2.default.map(ts, function (tup) {
+            return [parseFloat(tup[1]), new Date(tup[0]).getTime()];
+          }).reverse();
+
+          var obj = {
+            target: options.tick,
+            datapoints: datapoints
+          };
+
+          return obj;
+        }
+        return null;
+      }).catch(function (err) {
+        var that = _this;
+        return _this.delay(retryInterval).then(function () {
+          return that.getTimeSeries(options, retryInterval * 2);
+        });
+      });
+    }
+  }, {
     key: 'query',
     value: function query(options) {
-      var _this = this;
+      var _this2 = this;
 
       var start = options.range.from;
       var end = options.range.to;
@@ -47,33 +90,9 @@ var GenericDatasource = exports.GenericDatasource = function () {
 
         url = url + 'start_date=' + start.format('YYYY-MM-DD');
         url = url + '&end_date=' + end.format('YYYY-MM-DD');
-        url = url + '&api_key=' + _this.quandl_api_key;
+        url = url + '&api_key=' + _this2.quandl_api_key;
 
-        return _this.backendSrv.datasourceRequest({
-          url: url,
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-            'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept'
-          }
-        }).then(function (resp) {
-          if (resp.status === 200) {
-            var ts = resp.data.dataset.data;
-            var datapoints = _lodash2.default.map(ts, function (tup) {
-              return [parseFloat(tup[1]), new Date(tup[0]).getTime()];
-            }).reverse();
-
-            var obj = {
-              target: tick,
-              datapoints: datapoints
-            };
-
-            return obj;
-          }
-          return null;
-        });
+        return _this2.getTimeSeries({ url: url, tick: tick }, 500);
       });
       return Promise.all(proms).then(function (data) {
         console.log(data);
@@ -105,7 +124,7 @@ var GenericDatasource = exports.GenericDatasource = function () {
   }, {
     key: 'metricFindQuery',
     value: function metricFindQuery(options) {
-      var _this2 = this;
+      var _this3 = this;
 
       var url = 'https://www.quandl.com/api/v3/databases/codes.json?';
       url = url + 'api_key=' + this.quandl_api_key;
@@ -118,7 +137,7 @@ var GenericDatasource = exports.GenericDatasource = function () {
         var codes = _lodash2.default.map(resp.data.databases, function (ds) {
           return { text: ds.name, value: ds.database_code };
         });
-        var ret = _this2.mapToTextValue(codes);
+        var ret = _this3.mapToTextValue(codes);
         return ret;
       });
     }

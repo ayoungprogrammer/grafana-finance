@@ -12,24 +12,15 @@ export class GenericDatasource {
     this.templateSrv = templateSrv;
   }
 
-  query(options) {
-    var start = options.range.from;
-    var end = options.range.to;
+    delay(t) {
+       return new Promise(function(resolve) { 
+           setTimeout(resolve, t)
+       });
+    }
 
-    options.targets = options.targets.filter(t => !t.hide);
-
-    var proms = _.map(options.targets, target => {
-        var tick = target.db + '/' + target.code;
-
-        var url = 'https://www.quandl.com/api/v3/datasets/' + tick + '.json?';
-
-        url = url + 'start_date=' + start.format('YYYY-MM-DD');
-        url = url + '&end_date=' + end.format('YYYY-MM-DD');
-        url = url + '&api_key=' + this.quandl_api_key;
-
-
-        return this.backendSrv.datasourceRequest({
-          url: url,
+  getTimeSeries(options, retryInterval) {
+    return this.backendSrv.datasourceRequest({
+          url: options.url,
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -45,14 +36,39 @@ export class GenericDatasource {
                 }).reverse();
 
                 var obj = {
-                    target: tick,
+                    target: options.tick,
                     datapoints: datapoints
                 }
 
                 return obj;
             }
             return null;
+        }).catch(err => {
+            var that = this;
+            return this.delay(retryInterval).then(function(){
+                return that.getTimeSeries(options, retryInterval * 2);
+            })
         });
+  }
+
+  query(options) {
+    var start = options.range.from;
+    var end = options.range.to;
+
+    options.targets = options.targets.filter(t => !t.hide);
+
+    var proms = _.map(options.targets, target => {
+        var tick = target.db + '/' + target.code;
+
+        var url = 'https://www.quandl.com/api/v3/datasets/' + tick + '.json?';
+
+        url = url + 'start_date=' + start.format('YYYY-MM-DD');
+        url = url + '&end_date=' + end.format('YYYY-MM-DD');
+        url = url + '&api_key=' + this.quandl_api_key;
+
+        return this.getTimeSeries({url: url, tick: tick}, 500);
+
+        
     });
     return Promise.all(proms)
         .then(data => {
@@ -61,7 +77,7 @@ export class GenericDatasource {
         })
         .catch(err => console.log('Catch', err));
     }
-  
+
 
   testDatasource() {
     var url = 'https://www.quandl.com/api/v3/databases/codes.json?'
