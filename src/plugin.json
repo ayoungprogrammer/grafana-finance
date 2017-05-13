@@ -12,6 +12,10 @@
       "name": "Michael Young",
       "url": "http://github.com/ayoungprogrammer"
     },
+    "logos": {
+      "small": "img/icon.svg",
+      "large": "img/icon.svg"
+    },
     "links": [
       {"name": "GitHub", "url": "https://github.com/ayoungprogrammer/grafana-finance"}
     ],
