@@ -9,6 +9,7 @@ export class GenericDatasourceQueryCtrl extends QueryCtrl {
     this.scope = $scope;
     this.uiSegmentSrv = uiSegmentSrv;
     console.log(this.target);
+    this.target.key = this.target.key || '';
     this.target.target = this.target.target || 'LBMA/GOLD';
     this.target.db = this.target.target.split('/')[0] || 'LBMA';
     this.target.code = this.target.target.split('/')[1] || 'GOLD';

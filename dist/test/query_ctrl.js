@@ -28,6 +28,7 @@ var GenericDatasourceQueryCtrl = exports.GenericDatasourceQueryCtrl = function (
     _this.scope = $scope;
     _this.uiSegmentSrv = uiSegmentSrv;
     console.log(_this.target);
+    _this.target.key = _this.target.key || '';
     _this.target.target = _this.target.target || 'LBMA/GOLD';
     _this.target.db = _this.target.target.split('/')[0] || 'LBMA';
     _this.target.code = _this.target.target.split('/')[1] || 'GOLD';

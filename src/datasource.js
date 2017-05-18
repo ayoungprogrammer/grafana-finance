@@ -3,7 +3,6 @@ import _ from "lodash";
 export class GenericDatasource {
 
   constructor(instanceSettings, $q, backendSrv, templateSrv) {
-    console.log(instanceSettings);
     this.type = instanceSettings.type;
     this.name = instanceSettings.name;
     this.quandl_api_key = instanceSettings.jsonData.quandl_api_key;
@@ -12,43 +11,48 @@ export class GenericDatasource {
     this.templateSrv = templateSrv;
   }
 
-    delay(t) {
-       return new Promise(function(resolve) { 
-           setTimeout(resolve, t)
-       });
-    }
+  delay(t) {
+    return new Promise(function(resolve) { 
+      setTimeout(resolve, t)
+    });
+  }
 
   getTimeSeries(options, retryInterval) {
     return this.backendSrv.datasourceRequest({
-          url: options.url,
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-            'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept'
-          }
-        }).then(resp => {
-            if (resp.status === 200) {
-                var ts = resp.data.dataset.data;
-                var datapoints = _.map(ts, tup => {
-                    return [parseFloat(tup[1]), new Date(tup[0]).getTime()]
-                }).reverse();
+      url: options.url,
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+        'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept'
+      }
+    }).then(resp => {
+      if (resp.status === 200) {
+        var ts = resp.data.dataset.data;
+        var ind = resp.data.dataset.column_names.indexOf(options.key);
+        if(ind == -1){
+          ind = 1;
+        }
 
-                var obj = {
-                    target: options.tick,
-                    datapoints: datapoints
-                }
+        var datapoints = _.map(ts, tup => {
+            return [parseFloat(tup[ind]), new Date(tup[0]).getTime()]
+        }).reverse();
 
-                return obj;
-            }
-            return null;
-        }).catch(err => {
-            var that = this;
-            return this.delay(retryInterval).then(function(){
-                return that.getTimeSeries(options, retryInterval * 2);
-            })
-        });
+        var obj = {
+            target: options.tick,
+            datapoints: datapoints
+        }
+
+        return obj;
+      }
+      return null;
+    }).catch(err => {
+        var that = this;
+        return this.delay(retryInterval).then(function(){
+            return that.getTimeSeries(options, retryInterval * 2);
+        })
+    });
   }
 
   query(options) {
@@ -61,22 +65,20 @@ export class GenericDatasource {
         var tick = target.db + '/' + target.code;
 
         var url = 'https://www.quandl.com/api/v3/datasets/' + tick + '.json?';
+        var key = target.key;
 
         url = url + 'start_date=' + start.format('YYYY-MM-DD');
         url = url + '&end_date=' + end.format('YYYY-MM-DD');
         url = url + '&api_key=' + this.quandl_api_key;
 
-        return this.getTimeSeries({url: url, tick: tick}, 500);
-
-        
+        return this.getTimeSeries({url: url, tick: tick, key: key}, 500);
     });
     return Promise.all(proms)
         .then(data => {
-            console.log(data);
             return {data: data}
         })
         .catch(err => console.log('Catch', err));
-    }
+  }
 
 
   testDatasource() {
@@ -91,12 +93,6 @@ export class GenericDatasource {
         return { status: "success", message: "Data source is working", title: "Success" };
       }
     });
-  }
-
-  annotationQuery(options) {
-    return [
-        { annotation: options.annotation, "title": "Donlad trump is kinda funny", "time": 1450754160000, text: "teeext", tags: "taaags" },
-    ]
   }
 
   metricFindQuery(options) {
@@ -127,6 +123,4 @@ export class GenericDatasource {
       return { text: d, value: d };
     });
   }
-
-
 }

@@ -19,7 +19,6 @@ var GenericDatasource = exports.GenericDatasource = function () {
   function GenericDatasource(instanceSettings, $q, backendSrv, templateSrv) {
     _classCallCheck(this, GenericDatasource);
 
-    console.log(instanceSettings);
     this.type = instanceSettings.type;
     this.name = instanceSettings.name;
     this.quandl_api_key = instanceSettings.jsonData.quandl_api_key;
@@ -52,8 +51,13 @@ var GenericDatasource = exports.GenericDatasource = function () {
       }).then(function (resp) {
         if (resp.status === 200) {
           var ts = resp.data.dataset.data;
+          var ind = resp.data.dataset.column_names.indexOf(options.key);
+          if (ind == -1) {
+            ind = 1;
+          }
+
           var datapoints = _lodash2.default.map(ts, function (tup) {
-            return [parseFloat(tup[1]), new Date(tup[0]).getTime()];
+            return [parseFloat(tup[ind]), new Date(tup[0]).getTime()];
           }).reverse();
 
           var obj = {
@@ -87,15 +91,15 @@ var GenericDatasource = exports.GenericDatasource = function () {
         var tick = target.db + '/' + target.code;
 
         var url = 'https://www.quandl.com/api/v3/datasets/' + tick + '.json?';
+        var key = target.key;
 
         url = url + 'start_date=' + start.format('YYYY-MM-DD');
         url = url + '&end_date=' + end.format('YYYY-MM-DD');
         url = url + '&api_key=' + _this2.quandl_api_key;
 
-        return _this2.getTimeSeries({ url: url, tick: tick }, 500);
+        return _this2.getTimeSeries({ url: url, tick: tick, key: key }, 500);
       });
       return Promise.all(proms).then(function (data) {
-        console.log(data);
         return { data: data };
       }).catch(function (err) {
         return console.log('Catch', err);
@@ -115,11 +119,6 @@ var GenericDatasource = exports.GenericDatasource = function () {
           return { status: "success", message: "Data source is working", title: "Success" };
         }
       });
-    }
-  }, {
-    key: 'annotationQuery',
-    value: function annotationQuery(options) {
-      return [{ annotation: options.annotation, "title": "Donlad trump is kinda funny", "time": 1450754160000, text: "teeext", tags: "taaags" }];
     }
   }, {
     key: 'metricFindQuery',
