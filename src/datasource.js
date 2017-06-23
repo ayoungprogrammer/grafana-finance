@@ -48,6 +48,10 @@ export class GenericDatasource {
       }
       return null;
     }).catch(err => {
+        if(err.status == 404 || retryInterval > 5000){
+          throw err;
+        }
+
         var that = this;
         return this.delay(retryInterval).then(function(){
             return that.getTimeSeries(options, retryInterval * 2);
@@ -77,7 +81,6 @@ export class GenericDatasource {
         .then(data => {
             return {data: data}
         })
-        .catch(err => console.log('Catch', err));
   }
 
 

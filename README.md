@@ -2,7 +2,20 @@
 
 Fetches data from the Quandl API and maps the data to a timeseries. This is all done in the browser without needing an additional backend.
 
-The query format follows the QUANDL naming conventions: DATASET/CODE. For example, for the commodity price of gold, use the dateset LBMA with code GOLD: LBMA/GOLD.
+The query format is as follows:
+
+```
+[DATASET][CODE][KEY]
+
+
+DATASET: Quandl dataset
+CODE: Code of series in quandl dataset
+KEY (optional): name of column to use (leave blank to use first column)
+```
+
+For example, for the commodity price of gold, use the dateset LBMA with code GOLD: LBMA/GOLD.
+
+![](https://raw.githubusercontent.com/ayoungprogrammer/grafana-finance/master/src/img/query.png)
 
 You can obtain a Quandl API key [here](https://www.quandl.com/?modal=register).
 

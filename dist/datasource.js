@@ -88,6 +88,10 @@ System.register(['lodash'], function (_export, _context) {
               }
               return null;
             }).catch(function (err) {
+              if (err.status == 404 || retryInterval > 5000) {
+                throw err;
+              }
+
               var that = _this;
               return _this.delay(retryInterval).then(function () {
                 return that.getTimeSeries(options, retryInterval * 2);
@@ -120,8 +124,6 @@ System.register(['lodash'], function (_export, _context) {
             });
             return Promise.all(proms).then(function (data) {
               return { data: data };
-            }).catch(function (err) {
-              return console.log('Catch', err);
             });
           }
         }, {
