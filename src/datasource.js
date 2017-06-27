@@ -49,7 +49,16 @@ export class GenericDatasource {
       return null;
     }).catch(err => {
         if(err.status == 404 || retryInterval > 5000){
-          throw err;
+          console.log(err);
+          var errors = {
+            message: "Error getting time series"
+          }
+          if(err.data && err.data.quandl_error){
+            errors = {
+              message: err.data.quandl_error.message
+            };
+          }
+          return this.q.reject(errors);
         }
 
         var that = this;
@@ -109,7 +118,7 @@ export class GenericDatasource {
       headers: { 'Content-Type': 'application/json' }
     }).then(resp => {
         var codes = _.map(resp.data.databases, ds => {
-            return {text: ds.name,value: ds.database_code};
+            return {text: ds.database_code, value: ds.database_code};
         });
         var ret = this.mapToTextValue(codes);
         return ret;

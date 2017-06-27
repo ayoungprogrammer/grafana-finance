@@ -89,7 +89,16 @@ System.register(['lodash'], function (_export, _context) {
               return null;
             }).catch(function (err) {
               if (err.status == 404 || retryInterval > 5000) {
-                throw err;
+                console.log(err);
+                var errors = {
+                  message: "Error getting time series"
+                };
+                if (err.data && err.data.quandl_error) {
+                  errors = {
+                    message: err.data.quandl_error.message
+                  };
+                }
+                return _this.q.reject(errors);
               }
 
               var that = _this;
@@ -155,7 +164,7 @@ System.register(['lodash'], function (_export, _context) {
               headers: { 'Content-Type': 'application/json' }
             }).then(function (resp) {
               var codes = _.map(resp.data.databases, function (ds) {
-                return { text: ds.name, value: ds.database_code };
+                return { text: ds.database_code, value: ds.database_code };
               });
               var ret = _this3.mapToTextValue(codes);
               return ret;

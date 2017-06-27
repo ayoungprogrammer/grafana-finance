@@ -70,7 +70,16 @@ var GenericDatasource = exports.GenericDatasource = function () {
         return null;
       }).catch(function (err) {
         if (err.status == 404 || retryInterval > 5000) {
-          throw err;
+          console.log(err);
+          var errors = {
+            message: "Error getting time series"
+          };
+          if (err.data && err.data.quandl_error) {
+            errors = {
+              message: err.data.quandl_error.message
+            };
+          }
+          return _this.q.reject(errors);
         }
 
         var that = _this;
@@ -136,7 +145,7 @@ var GenericDatasource = exports.GenericDatasource = function () {
         headers: { 'Content-Type': 'application/json' }
       }).then(function (resp) {
         var codes = _lodash2.default.map(resp.data.databases, function (ds) {
-          return { text: ds.name, value: ds.database_code };
+          return { text: ds.database_code, value: ds.database_code };
         });
         var ret = _this3.mapToTextValue(codes);
         return ret;
