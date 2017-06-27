@@ -69,14 +69,17 @@ var GenericDatasource = exports.GenericDatasource = function () {
         }
         return null;
       }).catch(function (err) {
-        if (err.status == 404 || retryInterval > 5000) {
-          console.log(err);
+        if (err.status == 404 || retryInterval > 10000) {
           var errors = {
             message: "Error getting time series"
           };
           if (err.data && err.data.quandl_error) {
             errors = {
               message: err.data.quandl_error.message
+            };
+          } else if (retryInterval > 10000) {
+            var errors = {
+              message: "Request timed out"
             };
           }
           return _this.q.reject(errors);

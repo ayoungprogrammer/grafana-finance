@@ -48,8 +48,7 @@ export class GenericDatasource {
       }
       return null;
     }).catch(err => {
-        if(err.status == 404 || retryInterval > 5000){
-          console.log(err);
+        if(err.status == 404 || retryInterval > 10000){
           var errors = {
             message: "Error getting time series"
           }
@@ -57,6 +56,11 @@ export class GenericDatasource {
             errors = {
               message: err.data.quandl_error.message
             };
+          }
+          else if(retryInterval > 10000){
+            var errors = {
+              message: "Request timed out"
+            }
           }
           return this.q.reject(errors);
         }
