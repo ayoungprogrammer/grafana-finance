@@ -81,7 +81,7 @@ export class GenericDatasource {
     var proms = _.map(options.targets, target => {
         var tick = target.db + '/' + target.code;
 
-        var url = 'https://www.quandl.com/api/v3/datasets/' + tick + '.json?';
+        var url = 'https://www.quandl.com/api/v3/datatables/' + tick + '.json?';
         var key = target.key;
 
         url = url + 'start_date=' + start.format('YYYY-MM-DD');
